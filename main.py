@@ -43,8 +43,8 @@ if __name__ == '__main__':
     cap = cv2.VideoCapture(0)
 
     with mp_face_mesh.FaceMesh(
-    min_detection_confidence=0.35,
-    min_tracking_confidence=0.65) as face_mesh:
+    min_detection_confidence=0.3,
+    min_tracking_confidence=0.5) as face_mesh:
         t = time.time()
         while cap.isOpened():
             success, image = cap.read()

@@ -17,6 +17,8 @@ def feature_mouth(landmark_list):
 ft_mouth_list = []
 def detect_drowsiness(ft_mouth):
     global ft_mouth_list
+    if ft_mouth == -1:
+        return False
     if len(ft_mouth_list) < 30:
         ft_mouth_list.append(ft_mouth)
         return 'preparing...'

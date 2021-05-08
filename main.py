@@ -1,9 +1,11 @@
-import cv2 
-import mediapipe as mp
 import math
+import time
+
+import cv2
+import mediapipe as mp
 
 
-# Landmark coordinates 
+# Landmark point index
 POS_MOUTH = ((12, 14), (78, 306)) # ((vertical), (horizontal))
 DETECTION_THRESHOLD = 0.45
 
@@ -12,8 +14,26 @@ def feature_mouth(landmark_list):
     H = math.dist(landmark_list[POS_MOUTH[1][0]], landmark_list[POS_MOUTH[1][1]])
     return V / H
 
+ft_mouth_list = []
+def detect_drowsiness(ft_mouth):
+    global ft_mouth_list
+    if len(ft_mouth_list) < 30:
+        ft_mouth_list.append(ft_mouth)
+        return 'preparing...'
+    else:
+        ft_mouth_list.pop(0)
+        ft_mouth_list.append(ft_mouth)
+        if sum(ft_mouth_list) / 30 > DETECTION_THRESHOLD:
+            return True
+        else:
+            return False
+
+def alert_driver(t):
+    print(f'Warning: driver is drowsy | t = {t:.2f}')
+
 
 if __name__ == '__main__':
+    triggered = False # trigger for alert
     mp_drawing = mp.solutions.drawing_utils
     mp_face_mesh = mp.solutions.face_mesh
 
@@ -23,7 +43,7 @@ if __name__ == '__main__':
     with mp_face_mesh.FaceMesh(
     min_detection_confidence=0.35,
     min_tracking_confidence=0.65) as face_mesh:
-
+        t = time.time()
         while cap.isOpened():
             success, image = cap.read()
             if not success:
@@ -76,7 +96,16 @@ if __name__ == '__main__':
             
             cv2.putText(image, f'ft_mouth: {ft_mouth:.2f}', (int(0.03*image.shape[1]), int(0.06*image.shape[0])),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            
+            detected = detect_drowsiness(ft_mouth)
+            cv2.putText(image, f'is_drowsy: {detected}', (int(0.03*image.shape[1]), int(0.14*image.shape[0])),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
+            if detected and not triggered:
+                alert_driver(time.time() - t)
+                triggered = True
+            elif not detected:
+                triggered = False
 
             cv2.imshow('Drowsy driving detection', image)
             if cv2.waitKey(5) & 0xFF == ord("q"):
